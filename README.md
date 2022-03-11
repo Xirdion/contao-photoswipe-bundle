@@ -2,6 +2,16 @@
 
 This bundle implements [Photoswipe.js](https://photoswipe.com/v5/docs/getting-started/) as lightbox for images and galleries.
 
+____
+
+**Note:**
+
+A customized version of photoswipe ist used otherwise there was an error closing the lightbox.
+
+The code was upgraded according to [this issue](https://github.com/dimsemenov/PhotoSwipe/issues/1809).
+
+___
+
 Additional HTML markup is added dynamically while parsing the templates:
 - At the moment only `image` and `gallery` templates are taken into account
 - A **unique photoswipe-gallery-class** (`pswp__container--<template-ID>`) is generated and added to following template-properties:
