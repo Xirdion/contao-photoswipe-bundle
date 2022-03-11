@@ -22,8 +22,20 @@ class ParseTemplateListener
     ) {
     }
 
+    /**
+     * Add some photoswipe specific markup to the template object.
+     *
+     * @param Template $template
+     *
+     * @return void
+     */
     public function onParseTemplate(Template $template): void
     {
+        // Check if it is a fully functional template
+        if (null === $template->__get('id')) {
+            return;
+        }
+
         $templateName = $template->getName();
 
         // Contao template for a single image
