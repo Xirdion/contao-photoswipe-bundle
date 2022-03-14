@@ -99,13 +99,13 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
         $lightbox = <<<'PHOTOSWIPE'
             <script type="module">
             // Include Lightbox
-            import PhotoSwipeLightbox from "/bundles/contaophotoswipe/photoswipe-lightbox.esm.js";
+            import PhotoSwipeLightbox from "/bundles/contaophotoswipe/photoswipe-lightbox.esm.min.js";
 
             const {{pswp.options}} = {
                 gallery: '.%s',
                 children: 'a',
                 clickToCloseNonZoomable: false,
-                pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.js'
+                pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.min.js'
             };
             const {{pswp.lightbox}} = new PhotoSwipeLightbox({{pswp.options}});
             // Adding new caption element .pswp--caption at the end of the photoswipe container
