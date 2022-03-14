@@ -95,37 +95,64 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
             return $content;
         }
 
-        $lightbox = <<<'LIGHTBOX'
-            options = {
-                gallery: '.%s',
-                children: 'a',
-                pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.min.js'
-            };
-            lightbox = new PhotoSwipeLightbox(options);
-
-            lightbox.init();
-            LIGHTBOX;
-
-        $lightboxes = '';
-        $elements = $this->photoswipe->getElements();
-        foreach ($elements as $element) {
-            $lightboxes .= sprintf($lightbox, $element);
-        }
-
         // Adding the photoswipe JavaScript
-        $psJs = <<<'PHOTOSWIPE'
+        $lightbox = <<<'PHOTOSWIPE'
             <script type="module">
             // Include Lightbox
-            import PhotoSwipeLightbox from "/bundles/contaophotoswipe/photoswipe-lightbox.esm.min.js";
+            import PhotoSwipeLightbox from "/bundles/contaophotoswipe/photoswipe-lightbox.esm.js";
 
-            let options;
-            let lightbox;
-            %s
+            const {{pswp.options}} = {
+                gallery: '.%s',
+                children: 'a',
+                clickToCloseNonZoomable: false,
+                pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.js'
+            };
+            const {{pswp.lightbox}} = new PhotoSwipeLightbox({{pswp.options}});
+            // Adding new caption element .pswp--caption at the end of the photoswipe container
+            {{pswp.lightbox}}.on('uiRegister', function() {
+              {{pswp.lightbox}}.pswp.ui.registerElement({
+                name: 'caption',
+                order: 9,
+                isButton: false,
+                appendTo: 'root',
+                html: 'Caption text',
+                onInit: (el, pswp) => {
+                  {{pswp.lightbox}}.pswp.on('change', () => {
+                    const currSlideElement = {{pswp.lightbox}}.pswp.currSlide.data.element;
+                    let captionHTML = '';
+                    if (currSlideElement) {
+                      const caption = currSlideElement.dataset.pswpCaption;
+                      if (caption) {
+                        captionHTML = caption;
+                      } else {
+                        captionHTML = currSlideElement.querySelector('img').getAttribute('alt');
+                      }
+                    }
+                    el.innerHTML = captionHTML || '';
+                  });
+                }
+              });
+            });
+            {{pswp.lightbox}}.init();
             </script>
             PHOTOSWIPE;
 
-        $psJs = sprintf($psJs, $lightboxes);
+        $lightboxes = '';
+        $elements = $this->photoswipe->getElements();
+        foreach ($elements as $index => $element) {
+            $pswpScript = sprintf($lightbox, $element);
+            $search = [
+                '{{pswp.options}}',
+                '{{pswp.lightbox}}',
+            ];
 
-        return substr($content, 0, $bodyPos) . $psJs . substr($content, $bodyPos);
+            $replace = [
+                'options_' . $index,
+                'lightbox_' . $index,
+            ];
+            $lightboxes .= str_replace($search, $replace, $pswpScript);
+        }
+
+        return substr($content, 0, $bodyPos) . $lightboxes . substr($content, $bodyPos);
     }
 }
