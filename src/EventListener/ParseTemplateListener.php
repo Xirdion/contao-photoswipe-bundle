@@ -124,22 +124,20 @@ class ParseTemplateListener
             return $templateData;
         }
 
-        $picture = $templateData['picture'] ?? null;
-        if (null === $picture) {
-            return $templateData;
-        }
+        $additionalData = [
+            'src' => $lightBoxData['img']['src'],
+            'width' => $lightBoxData['img']['width'],
+            'height' => $lightBoxData['img']['height'],
+            'cropped' => '1',
+            'caption' => $templateData['caption'] ?? '',
+        ];
 
         // Add additional attributes to the anchor-tag
         $attributes = $templateData['attributes'] ?? '';
-        $attributes .= ' data-pswp-src="' . $lightBoxData['img']['src'] . '"';
-        $templateData['attributes'] = $attributes;
-
-        // Add some additional data to the image-tag
-        if (false === isset($picture['attributes'])) {
-            $picture['attributes'] = '';
+        foreach ($additionalData as $attr => $value) {
+            $attributes .= ' data-pswp-' . $attr . '="' . $value . '"';
         }
-        $picture['attributes'] .= ' data-pswp-width="' . $lightBoxData['img']['width'] . '" data-pswp-height="' . $lightBoxData['img']['height'] . '"';
-        $templateData['picture'] = $picture;
+        $templateData['attributes'] = $attributes;
 
         return $templateData;
     }
