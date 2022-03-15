@@ -14,26 +14,43 @@ namespace Sowieso\PhotoswipeBundle\Photoswipe;
 
 class Photoswipe
 {
-    /**
-     * @var array<int, string>
-     */
-    private static array $elements = [];
+    private PhotoswipeConfig $config;
 
     /**
-     * @return array<int, string>
+     * @param int                 $id
+     * @param string              $selector
+     * @param array<string, bool> $configData
      */
-    public function getElements(): array
-    {
-        return self::$elements;
+    public function __construct(
+        private int $id,
+        private string $selector,
+        array $configData,
+    ) {
+        $this->config = new PhotoswipeConfig();
+        $this->config->createConfigFromArray($configData);
     }
 
-    public function addElement(string $element): void
+    /**
+     * @return int
+     */
+    public function getId(): int
     {
-        self::$elements[] = $element;
+        return $this->id;
     }
 
-    public function hasElements(): bool
+    /**
+     * @return string
+     */
+    public function getSelector(): string
     {
-        return \count(self::$elements) > 0;
+        return $this->selector;
+    }
+
+    /**
+     * @return PhotoswipeConfig
+     */
+    public function getConfig(): PhotoswipeConfig
+    {
+        return $this->config;
     }
 }

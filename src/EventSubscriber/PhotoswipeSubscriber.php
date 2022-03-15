@@ -14,6 +14,7 @@ namespace Sowieso\PhotoswipeBundle\EventSubscriber;
 
 use Contao\CoreBundle\Routing\ScopeMatcher;
 use Sowieso\PhotoswipeBundle\Photoswipe\Photoswipe;
+use Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -22,7 +23,7 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
 {
     public function __construct(
         private ScopeMatcher $scopeMatcher,
-        private Photoswipe $photoswipe,
+        private PhotoswipeList $photoswipeList,
     ) {
     }
 
@@ -44,7 +45,7 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
             return;
         }
 
-        if (false === $this->photoswipe->hasElements()) {
+        if (false === $this->photoswipeList->hasElements()) {
             return;
         }
 
@@ -101,58 +102,82 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
             // Include Lightbox
             import PhotoSwipeLightbox from "/bundles/contaophotoswipe/photoswipe-lightbox.esm.min.js";
 
-            const {{pswp.options}} = {
+            const [[PSWP_OPTION]] = {
                 gallery: '.%s',
                 children: 'a',
                 clickToCloseNonZoomable: false,
                 pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.min.js'
             };
-            const {{pswp.lightbox}} = new PhotoSwipeLightbox({{pswp.options}});
-            // Adding new caption element .pswp--caption at the end of the photoswipe container
-            {{pswp.lightbox}}.on('uiRegister', function() {
-              {{pswp.lightbox}}.pswp.ui.registerElement({
-                name: 'caption',
-                order: 9,
-                isButton: false,
-                appendTo: 'root',
-                html: 'Caption text',
-                onInit: (el, pswp) => {
-                  {{pswp.lightbox}}.pswp.on('change', () => {
-                    const currSlideElement = {{pswp.lightbox}}.pswp.currSlide.data.element;
-                    let captionHTML = '';
-                    if (currSlideElement) {
-                      const caption = currSlideElement.dataset.pswpCaption;
-                      if (caption) {
-                        captionHTML = caption;
-                      } else {
-                        captionHTML = currSlideElement.querySelector('img').getAttribute('alt');
-                      }
-                    }
-                    el.innerHTML = captionHTML || '';
-                  });
-                }
-              });
+            const [[PSWP_LIGHTBOX]] = new PhotoSwipeLightbox([[PSWP_OPTION]]);
+            [[PSWP_CAPTION]]
+            [[PSWP_LIGHTBOX]].addFilter('placeholderSrc', (src, slide) => {
+                // Use the original image as placeholder
+                return slide.data.src;
             });
-            {{pswp.lightbox}}.init();
+            [[PSWP_LIGHTBOX]].init();
             </script>
             PHOTOSWIPE;
 
         $lightboxes = '';
-        $elements = $this->photoswipe->getElements();
-        foreach ($elements as $index => $element) {
-            $pswpScript = sprintf($lightbox, $element);
-            $search = [
-                '{{pswp.options}}',
-                '{{pswp.lightbox}}',
-            ];
+        $elements = $this->photoswipeList->getElements();
+        foreach ($elements as $element) {
+            $config = $element->getConfig();
 
-            $replace = [
-                'options_' . $index,
-                'lightbox_' . $index,
-            ];
-            $lightboxes .= str_replace($search, $replace, $pswpScript);
+            $script = $this->addCaption($lightbox, $config->isShowCaption());
+            $script = $this->insertLightboxId($script, $element->getId());
+            $lightboxes .= sprintf($script, $element->getSelector());
         }
 
         return substr($content, 0, $bodyPos) . $lightboxes . substr($content, $bodyPos);
+    }
+
+    private function addCaption(string $script, bool $addCaption): string
+    {
+        $captionScript = <<<'CAPTION'
+            // Adding new caption element .pswp--caption at the end of the photoswipe container
+            [[PSWP_LIGHTBOX]].on('uiRegister', function() {
+                [[PSWP_LIGHTBOX]].pswp.ui.registerElement({
+                    name: 'caption',
+                    order: 9,
+                    isButton: false,
+                    appendTo: 'root',
+                    html: 'Caption text',
+                    onInit: (el, pswp) => {
+                        [[PSWP_LIGHTBOX]].pswp.on('change', () => {
+                            const currSlideElement = [[PSWP_LIGHTBOX]].pswp.currSlide.data.element;
+                            let captionHTML = '';
+                            if (currSlideElement) {
+                                const caption = currSlideElement.dataset.pswpCaption;
+                                if (caption) {
+                                    captionHTML = caption;
+                                } else {
+                                    captionHTML = currSlideElement.querySelector('img').getAttribute('alt');
+                                }
+                            }
+                            el.innerHTML = captionHTML || '';
+                        });
+                    }
+                });
+            });
+            CAPTION;
+
+        $replace = $addCaption ? $captionScript : '';
+
+        return str_replace('[[PSWP_CAPTION]]', $replace, $script);
+    }
+
+    private function insertLightboxId(string $script, int $id): string
+    {
+        $search = [
+            '[[PSWP_OPTION]]',
+            '[[PSWP_LIGHTBOX]]',
+        ];
+
+        $replace = [
+            'options_' . $id,
+            'lightbox_' . $id,
+        ];
+
+        return str_replace($search, $replace, $script);
     }
 }

@@ -2,5 +2,5 @@ services:
     _defaults:
         autowire: true
 
-    Sowieso\PhotoswipeBundle\Photoswipe\Photoswipe:
-        class: Sowieso\PhotoswipeBundle\Photoswipe\Photoswipe
+    Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList:
+        class: Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList

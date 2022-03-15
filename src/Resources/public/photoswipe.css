@@ -414,3 +414,23 @@ div.pswp__img--placeholder,
 .pswp--one-slide .pswp__counter {
   display: none;
 }
+
+
+/*
+
+  Caption element
+
+*/
+.pswp__caption {
+    background: var(--pswp-icon-color-secondary);
+    font-size: 16px;
+    color: var(--pswp-icon-color);
+    width: calc(100% - 32px);
+    max-width: 400px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+}

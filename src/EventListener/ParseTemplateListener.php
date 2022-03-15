@@ -14,11 +14,12 @@ namespace Sowieso\PhotoswipeBundle\EventListener;
 
 use Contao\Template;
 use Sowieso\PhotoswipeBundle\Photoswipe\Photoswipe;
+use Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList;
 
 class ParseTemplateListener
 {
     public function __construct(
-        private Photoswipe $photoswipe,
+        private PhotoswipeList $photoswipeList,
     ) {
     }
 
@@ -57,6 +58,7 @@ class ParseTemplateListener
             return;
         }
 
+        $addCaption = false;
         $rows = (array) $template->__get('body');
         foreach ($rows as $rowI => $row) {
             foreach ($row as $colI => $col) {
@@ -79,14 +81,17 @@ class ParseTemplateListener
                     $col->{$field} = $data;
                 }
 
+                if (isset($col->caption) && '' !== (string) $col->caption) {
+                    $addCaption = true;
+                }
+
                 $rows[$rowI][$colI] = $col;
             }
         }
         $template->__set('body', $rows);
 
         // Generate unique photoswipe selector
-        $psSelector = 'pswp__container--' . $template->__get('id');
-        $this->photoswipe->addElement($psSelector);
+        $psSelector = $this->generatePhotoswipeSelector((int) $template->__get('id'), '', $addCaption);
 
         // Add additional unique photoswipe class to the gallery container (ul)
         $containerClass = (string) $template->__get('perRow');
@@ -100,12 +105,17 @@ class ParseTemplateListener
         }
 
         // Generate unique photoswipe selector
-        $psSelector = $this->generatePhotoswipeSelector($template);
+        $addCaption = false;
+        if (isset($template->caption) && '' !== (string) $template->caption) {
+            $addCaption = true;
+        }
+
+        $attributes = (string) $template->__get('attributes');
+        $psSelector = $this->generatePhotoswipeSelector((int) $template->__get('id'), $attributes, $addCaption);
 
         // Add additional unique photoswipe class to the image container (figure)
         $containerClass = (string) $template->__get('floatClass');
-        $containerClass .= ' ' . $psSelector;
-        $template->__set('floatClass', $containerClass);
+        $template->__set('floatClass', $containerClass . ' ' . $psSelector);
 
         $template->setData($this->modifyTemplateData($template->getData()));
     }
@@ -143,14 +153,45 @@ class ParseTemplateListener
     }
 
     /**
-     * @param Template $template
+     * @param int    $id
+     * @param string $attributes
+     * @param bool   $showCaption
      *
      * @return string
      */
-    private function generatePhotoswipeSelector(Template $template): string
+    private function generatePhotoswipeSelector(int $id, string $attributes, bool $showCaption): string
     {
-        $psSelector = 'pswp__container--' . $template->__get('id');
-        $this->photoswipe->addElement($psSelector);
+        $lightboxId = null;
+        $attrEntries = explode(' ', $attributes);
+        foreach ($attrEntries as $attribute) {
+            if ('' === $attribute) {
+                continue;
+            }
+            // Check if there is a lightbox attribute from Contao
+            if (false === str_starts_with($attribute, 'data-lightbox="')) {
+                continue;
+            }
+
+            // Check if the lightbox-attribute is not just empty
+            if ('data-lightbox=""' === $attribute) {
+                continue;
+            }
+
+            $lightboxId = explode('"', $attribute)[1];
+            break;
+        }
+
+        if ($lightboxId) {
+            $psSelector = $lightboxId;
+        } else {
+            $psSelector = 'pswp__container--' . $id;
+        }
+        $config = [
+            'caption' => $showCaption,
+        ];
+
+        $photoswipe = new Photoswipe($id, $psSelector, $config);
+        $this->photoswipeList->addElement($photoswipe);
 
         return $psSelector;
     }
