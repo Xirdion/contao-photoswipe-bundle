@@ -148,9 +148,9 @@ class ParseTemplateListener
         // Extend the class of the anchor tag
         $linkClass = $this->extractAttributeProperty($attributes, 'class');
         if (null === $linkClass) {
-            $attributes .= ' class="sowieso__pswp--item"';
+            $attributes .= ' class="lightbox__pswp--item"';
         } else {
-            $attributes = str_replace($linkClass, 'sowieso__pswp--item ' . $linkClass, $attributes);
+            $attributes = str_replace($linkClass, 'lightbox__pswp--item ' . $linkClass, $attributes);
         }
 
         // Add additional attributes to the anchor tag
