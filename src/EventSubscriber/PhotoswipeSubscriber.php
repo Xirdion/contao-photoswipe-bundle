@@ -104,7 +104,7 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
 
             const [[PSWP_OPTION]] = {
                 gallery: '.%s',
-                children: 'a',
+                childSelector: 'a.sowieso__pswp--item',
                 clickToCloseNonZoomable: false,
                 pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.min.js'
             };

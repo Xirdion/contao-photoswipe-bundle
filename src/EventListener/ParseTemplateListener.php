@@ -142,11 +142,22 @@ class ParseTemplateListener
             'caption' => $templateData['caption'] ?? '',
         ];
 
-        // Add additional attributes to the anchor-tag
+        // different HTML attributes for the image anchor tag
         $attributes = $templateData['attributes'] ?? '';
+
+        // Extend the class of the anchor tag
+        $linkClass = $this->extractAttributeProperty($attributes, 'class');
+        if (null === $linkClass) {
+            $attributes .= ' class="sowieso__pswp--item"';
+        } else {
+            $attributes = str_replace($linkClass, 'sowieso__pswp--item ' . $linkClass, $attributes);
+        }
+
+        // Add additional attributes to the anchor tag
         foreach ($additionalData as $attr => $value) {
             $attributes .= ' data-pswp-' . $attr . '="' . $value . '"';
         }
+
         $templateData['attributes'] = $attributes;
 
         return $templateData;
@@ -161,7 +172,7 @@ class ParseTemplateListener
      */
     private function generatePhotoswipeSelector(int $id, string $attributes, bool $showCaption): string
     {
-        $lightboxId = $this->extractAttributes($attributes);
+        $lightboxId = $this->extractAttributeProperty($attributes, 'data-lightbox');
         $psSelector = 'pswp__container--' . $id;
         $config = [
             'caption' => $showCaption,
@@ -174,16 +185,16 @@ class ParseTemplateListener
     }
 
     /**
-     * Try to extract a given lightbox ID from the image attributes.
-     * This is only used to imitate a gallery functionality.
+     * Try to extract a given property from a attribute string.
      *
-     * @param string $attributes
+     * @param string  $attributes
+     * @param ?string $prop
      *
      * @return string|null
      */
-    private function extractAttributes(string $attributes): ?string
+    private function extractAttributeProperty(string $attributes, ?string $prop): ?string
     {
-        if ('' === $attributes) {
+        if ('' === $attributes || !$prop) {
             return null;
         }
 
@@ -193,12 +204,12 @@ class ParseTemplateListener
                 continue;
             }
             // Check if there is a lightbox attribute from Contao
-            if (false === str_starts_with($attribute, 'data-lightbox="')) {
+            if (false === str_starts_with($attribute, $prop . '="')) {
                 continue;
             }
 
             // Check if the lightbox-attribute is not just empty
-            if ('data-lightbox=""' === $attribute) {
+            if ($prop . '=""' === $attribute) {
                 continue;
             }
 
