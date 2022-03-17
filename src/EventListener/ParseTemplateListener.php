@@ -161,7 +161,32 @@ class ParseTemplateListener
      */
     private function generatePhotoswipeSelector(int $id, string $attributes, bool $showCaption): string
     {
-        $lightboxId = null;
+        $lightboxId = $this->extractAttributes($attributes);
+        $psSelector = 'pswp__container--' . $id;
+        $config = [
+            'caption' => $showCaption,
+        ];
+
+        $photoswipe = new Photoswipe($id, $lightboxId ?: $psSelector, $config);
+        $this->photoswipeList->addElement($photoswipe);
+
+        return $psSelector;
+    }
+
+    /**
+     * Try to extract a given lightbox ID from the image attributes.
+     * This is only used to imitate a gallery functionality.
+     *
+     * @param string $attributes
+     *
+     * @return string|null
+     */
+    private function extractAttributes(string $attributes): ?string
+    {
+        if ('' === $attributes) {
+            return null;
+        }
+
         $attrEntries = explode(' ', $attributes);
         foreach ($attrEntries as $attribute) {
             if ('' === $attribute) {
@@ -177,22 +202,9 @@ class ParseTemplateListener
                 continue;
             }
 
-            $lightboxId = explode('"', $attribute)[1];
-            break;
+            return explode('"', $attribute)[1];
         }
 
-        if ($lightboxId) {
-            $psSelector = $lightboxId;
-        } else {
-            $psSelector = 'pswp__container--' . $id;
-        }
-        $config = [
-            'caption' => $showCaption,
-        ];
-
-        $photoswipe = new Photoswipe($id, $psSelector, $config);
-        $this->photoswipeList->addElement($photoswipe);
-
-        return $psSelector;
+        return null;
     }
 }
