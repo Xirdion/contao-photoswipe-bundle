@@ -12,14 +12,17 @@ declare(strict_types=1);
 
 namespace Sowieso\PhotoswipeBundle\EventListener;
 
+use Contao\CoreBundle\Routing\ScopeMatcher;
 use Contao\Template;
-use Sowieso\PhotoswipeBundle\Photoswipe\Photoswipe;
 use Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ParseTemplateListener
 {
     public function __construct(
-        private PhotoswipeList $photoswipeList,
+        private readonly RequestStack $requestStack,
+        private readonly ScopeMatcher $scopeMatcher,
+        private readonly PhotoswipeList $photoswipeList,
     ) {
     }
 
@@ -37,6 +40,17 @@ class ParseTemplateListener
             return;
         }
 
+        // Check the current request
+        $request = $this->requestStack->getCurrentRequest();
+        if (null === $request) {
+            return;
+        }
+
+        if (false === $this->scopeMatcher->isFrontendRequest($request)) {
+            return;
+        }
+
+        // Only handle specific templates
         $templateName = $template->getName();
 
         // Contao template for a single image
@@ -46,19 +60,26 @@ class ParseTemplateListener
             return;
         }
 
-        // Contao template for a image gallery
+        // Contao template for an image gallery
         if (true === str_starts_with($templateName, 'gallery')) {
             $this->handleGalleryTemplate($template);
         }
     }
 
+    /**
+     * @param Template $template
+     *
+     * @return void
+     */
     private function handleGalleryTemplate(Template $template): void
     {
         if (true !== (bool) $template->__get('fullsize')) {
             return;
         }
 
-        $addCaption = false;
+        // Generate unique photoswipe selector
+        $psSelector = $this->generatePhotoswipeSelector();
+
         $rows = (array) $template->__get('body');
         foreach ($rows as $rowI => $row) {
             foreach ($row as $colI => $col) {
@@ -81,17 +102,10 @@ class ParseTemplateListener
                     $col->{$field} = $data;
                 }
 
-                if (isset($col->caption) && '' !== (string) $col->caption) {
-                    $addCaption = true;
-                }
-
                 $rows[$rowI][$colI] = $col;
             }
         }
         $template->__set('body', $rows);
-
-        // Generate unique photoswipe selector
-        $psSelector = $this->generatePhotoswipeSelector((int) $template->__get('id'), '', $addCaption);
 
         // Add additional unique photoswipe class to the gallery container (ul)
         $containerClass = (string) $template->__get('perRow');
@@ -105,13 +119,7 @@ class ParseTemplateListener
         }
 
         // Generate unique photoswipe selector
-        $addCaption = false;
-        if (isset($template->caption) && '' !== (string) $template->caption) {
-            $addCaption = true;
-        }
-
-        $attributes = (string) $template->__get('attributes');
-        $psSelector = $this->generatePhotoswipeSelector((int) $template->__get('id'), $attributes, $addCaption);
+        $psSelector = $this->generatePhotoswipeSelector();
 
         // Add additional unique photoswipe class to the image container (figure)
         $containerClass = (string) $template->__get('floatClass');
@@ -134,12 +142,14 @@ class ParseTemplateListener
             return $templateData;
         }
 
+        if (false === $this->photoswipeList->hasEntry($this->photoswipeList->getCounter())) {
+            $this->photoswipeList->addElement();
+        }
+
         $additionalData = [
             'src' => $lightBoxData['img']['src'],
             'width' => $lightBoxData['img']['width'],
             'height' => $lightBoxData['img']['height'],
-            'cropped' => '1',
-            'caption' => $templateData['caption'] ?? '',
         ];
 
         // different HTML attributes for the image anchor tag
@@ -148,9 +158,9 @@ class ParseTemplateListener
         // Extend the class of the anchor tag
         $linkClass = $this->extractAttributeProperty($attributes, 'class');
         if (null === $linkClass) {
-            $attributes .= ' class="lightbox__pswp--item"';
+            $attributes .= ' class="contao-pswp__item"';
         } else {
-            $attributes = str_replace($linkClass, 'lightbox__pswp--item ' . $linkClass, $attributes);
+            $attributes = str_replace($linkClass, 'contao-pswp__item ' . $linkClass, $attributes);
         }
 
         // Add additional attributes to the anchor tag
@@ -164,24 +174,12 @@ class ParseTemplateListener
     }
 
     /**
-     * @param int    $id
-     * @param string $attributes
-     * @param bool   $showCaption
-     *
      * @return string
      */
-    private function generatePhotoswipeSelector(int $id, string $attributes, bool $showCaption): string
+    private function generatePhotoswipeSelector(): string
     {
-        $lightboxId = $this->extractAttributeProperty($attributes, 'data-lightbox');
-        $psSelector = 'pswp__container--' . $id;
-        $config = [
-            'caption' => $showCaption,
-        ];
-
-        $photoswipe = new Photoswipe($id, $lightboxId ?: $psSelector, $config);
-        $this->photoswipeList->addElement($photoswipe);
-
-        return $psSelector;
+        // Return the unique photoswipe class
+        return 'contao-pswp__container--' . $this->photoswipeList->increaseCounter();
     }
 
     /**

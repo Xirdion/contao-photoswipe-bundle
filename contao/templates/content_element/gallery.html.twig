@@ -1,0 +1,12 @@
+{% extends "@Contao/content_element/gallery.html.twig" %}
+
+{% block content %}
+    {% set list_attributes = pswp_container_class()
+        .mergeWith(list_attributes|default)
+    %}
+    {% with {items: images, list_attributes: list_attributes} %}{{ block('list_component') }}{% endwith %}
+{% endblock %}
+
+{% block list_item %}
+    {% with {figure: item, pswp_gallery: true} %}{{ block('figure_component') }}{% endwith %}
+{% endblock %}

@@ -11,14 +11,14 @@
     }
   ],
   "require": {
-    "php": "^8.0",
+    "php": "^8.1",
     "ext-json": "*",
-    "contao/core-bundle": "^4.13",
+    "contao/core-bundle": "^4.13 | ^5.0",
     "contao/conflicts": "@dev"
   },
   "require-dev": {
     "contao/manager-plugin": "^2.0",
-    "contao/test-case": "^4.6",
+    "contao/test-case": "^5.0",
     "friendsofphp/php-cs-fixer": "^3.0",
     "phpstan/phpstan": "^1.4",
     "phpstan/phpstan-phpunit": "^1.0",

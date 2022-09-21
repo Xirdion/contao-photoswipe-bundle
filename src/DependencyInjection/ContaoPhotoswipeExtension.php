@@ -30,7 +30,7 @@ class ContaoPhotoswipeExtension extends Extension
     {
         $loader = new YamlFileLoader(
             $container,
-            new FileLocator(__DIR__ . '/../Resources/config')
+            new FileLocator(__DIR__ . '/../../config')
         );
 
         try {
@@ -38,7 +38,7 @@ class ContaoPhotoswipeExtension extends Extension
             $loader->load('listener.yaml');
         } catch (\Exception $e) {
             echo $e->getMessage();
-            exit();
+            exit;
         }
     }
 }

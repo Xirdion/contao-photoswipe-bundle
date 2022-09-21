@@ -1,0 +1,19 @@
+{% use '@Contao/component/_figure.html.twig' %}
+
+{% block figure_component %}
+    {# Just add the additional container class to the figure element if the images are not within a gallery #}
+    {% if pswp_gallery is not defined %}
+        {% set figure_attributes = pswp_container_class()
+            .mergeWith(figure_attributes|default)
+        %}
+    {% endif %}
+
+    {{ parent() }}
+{% endblock %}
+
+{% block media_link %}
+    {% set link_attributes = pswp_attr(figure)
+        .mergeWith(link_attributes|default)
+    %}
+    {{ parent() }}
+{% endblock %}

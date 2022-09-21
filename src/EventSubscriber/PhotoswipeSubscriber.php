@@ -14,6 +14,7 @@ namespace Sowieso\PhotoswipeBundle\EventSubscriber;
 
 use Contao\CoreBundle\Routing\ScopeMatcher;
 use Sowieso\PhotoswipeBundle\Photoswipe\Photoswipe;
+use Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeConfig;
 use Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
@@ -22,8 +23,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class PhotoswipeSubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        private ScopeMatcher $scopeMatcher,
-        private PhotoswipeList $photoswipeList,
+        private readonly ScopeMatcher $scopeMatcher,
+        private readonly PhotoswipeList $photoswipeList,
     ) {
     }
 
@@ -37,9 +38,14 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
         ];
     }
 
+    /**
+     * @param ResponseEvent $event
+     *
+     * @return void
+     */
     public function addPhotoswipeResources(ResponseEvent $event): void
     {
-        // Check if the current request is the main frontend request of contao
+        // Check if the current request is the main frontend request of Contao
         // Only this request needs the modifications
         if (false === $this->scopeMatcher->isFrontendMainRequest($event)) {
             return;
@@ -96,7 +102,7 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
             return $content;
         }
 
-        // Adding the photoswipe JavaScript
+        // The photoswipe script containing some placeholders that are dynamically filled
         $lightbox = <<<'PHOTOSWIPE'
             <script type="module">
             // Include Lightbox
@@ -104,7 +110,7 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
 
             const [[PSWP_OPTION]] = {
                 gallery: '.%s',
-                childSelector: 'a.lightbox__pswp--item',
+                childSelector: 'a.contao-pswp__item',
                 clickToCloseNonZoomable: false,
                 pswpModule: '/bundles/contaophotoswipe/photoswipe.esm.min.js'
             };
@@ -123,16 +129,35 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
         foreach ($elements as $element) {
             $config = $element->getConfig();
 
-            $script = $this->addCaption($lightbox, $config->isShowCaption());
-            $script = $this->insertLightboxId($script, $element->getId());
-            $lightboxes .= sprintf($script, $element->getSelector());
+            // Adding captions
+            $script = $this->addCaption($lightbox, $config);
+
+            // Set unique constant names within the script
+            $script = $this->insertLightboxId($script, $element);
+
+            // Set the gallery selector
+            $lightboxes .= sprintf($script, 'contao-pswp__container--' . $element->getId());
         }
 
         return substr($content, 0, $bodyPos) . $lightboxes . substr($content, $bodyPos);
     }
 
-    private function addCaption(string $script, bool $addCaption): string
+    /**
+     * If the image has a caption additional JavaScript Code is added to photoswipe.
+     * The content of the caption is read from the figcaption element.
+     *
+     * @param string           $script
+     * @param PhotoswipeConfig $config
+     *
+     * @return string
+     */
+    private function addCaption(string $script, PhotoswipeConfig $config): string
     {
+        if (false === $config->hasCaption()) {
+            // Remove the caption placeholder from the lightbox script
+            return str_replace('[[PSWP_CAPTION]]', '', $script);
+        }
+
         $captionScript = <<<'CAPTION'
             // Adding new caption element .pswp--caption at the end of the photoswipe container
             [[PSWP_LIGHTBOX]].on('uiRegister', function() {
@@ -147,9 +172,9 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
                             const currSlideElement = [[PSWP_LIGHTBOX]].pswp.currSlide.data.element;
                             let captionHTML = '';
                             if (currSlideElement) {
-                                const caption = currSlideElement.dataset.pswpCaption;
+                                const caption = currSlideElement.querySelector('figcaption');
                                 if (caption) {
-                                    captionHTML = caption;
+                                    captionHTML = caption.innerHTML;
                                 } else {
                                     captionHTML = currSlideElement.querySelector('img').getAttribute('alt');
                                 }
@@ -161,12 +186,18 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
             });
             CAPTION;
 
-        $replace = $addCaption ? $captionScript : '';
-
-        return str_replace('[[PSWP_CAPTION]]', $replace, $script);
+        return str_replace('[[PSWP_CAPTION]]', $captionScript, $script);
     }
 
-    private function insertLightboxId(string $script, int $id): string
+    /**
+     * Generate a unique name for the constants within the photoswipe script.
+     *
+     * @param string     $script
+     * @param Photoswipe $photoswipe
+     *
+     * @return string
+     */
+    private function insertLightboxId(string $script, Photoswipe $photoswipe): string
     {
         $search = [
             '[[PSWP_OPTION]]',
@@ -174,8 +205,8 @@ class PhotoswipeSubscriber implements EventSubscriberInterface
         ];
 
         $replace = [
-            'options_' . $id,
-            'lightbox_' . $id,
+            'options_' . $photoswipe->getId(),
+            'lightbox_' . $photoswipe->getId(),
         ];
 
         return str_replace($search, $replace, $script);

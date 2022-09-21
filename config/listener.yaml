@@ -13,6 +13,8 @@ services:
   Sowieso\PhotoswipeBundle\EventListener\ParseTemplateListener:
     class: Sowieso\PhotoswipeBundle\EventListener\ParseTemplateListener
     arguments:
+      - '@request_stack'
+      - '@contao.routing.scope_matcher'
       - '@Sowieso\PhotoswipeBundle\Photoswipe\PhotoswipeList'
     tags:
       - { name: contao.hook, hook: parseTemplate, method: onParseTemplate }

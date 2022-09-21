@@ -14,27 +14,45 @@ namespace Sowieso\PhotoswipeBundle\Photoswipe;
 
 class PhotoswipeList
 {
+    private static int $counter = 0;
+
     /**
-     * @var array<string, Photoswipe>
+     * @var array<int, Photoswipe>
      */
     private static array $elements = [];
 
+    public function getCounter(): int
+    {
+        return self::$counter;
+    }
+
+    public function increaseCounter(): int
+    {
+        return ++self::$counter;
+    }
+
     /**
-     * @return array<string, Photoswipe>
+     * @return array<int, Photoswipe>
      */
     public function getElements(): array
     {
         return self::$elements;
     }
 
-    public function addElement(Photoswipe $element): void
+    /**
+     * Try to add a PhotoSwipe element with its config to the list.
+     *
+     * @return void
+     */
+    public function addElement(): void
     {
-        // Do not add a duplicate element
-        if (true === \array_key_exists($element->getSelector(), self::$elements)) {
-            return;
-        }
+        // Add the element to the list
+        self::$elements[self::$counter] = new Photoswipe(self::$counter, ['caption' => true]);
+    }
 
-        self::$elements[$element->getSelector()] = $element;
+    public function hasEntry(int $id): bool
+    {
+        return \array_key_exists($id, self::$elements);
     }
 
     public function hasElements(): bool

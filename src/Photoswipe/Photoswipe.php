@@ -17,13 +17,11 @@ class Photoswipe
     private PhotoswipeConfig $config;
 
     /**
-     * @param int                 $id
-     * @param string              $selector
-     * @param array<string, bool> $configData
+     * @param int                  $id
+     * @param array<string, mixed> $configData
      */
     public function __construct(
-        private int $id,
-        private string $selector,
+        private readonly int $id,
         array $configData,
     ) {
         $this->config = new PhotoswipeConfig();
@@ -36,14 +34,6 @@ class Photoswipe
     public function getId(): int
     {
         return $this->id;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSelector(): string
-    {
-        return $this->selector;
     }
 
     /**

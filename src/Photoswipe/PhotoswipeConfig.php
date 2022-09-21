@@ -14,10 +14,10 @@ namespace Sowieso\PhotoswipeBundle\Photoswipe;
 
 class PhotoswipeConfig
 {
-    private bool $showCaption;
+    private bool $caption = false;
 
     /**
-     * @param array<string, bool> $data
+     * @param array<string, mixed> $data
      *
      * @return void
      */
@@ -26,7 +26,7 @@ class PhotoswipeConfig
         foreach ($data as $prop => $value) {
             switch ($prop) {
                 case 'caption':
-                    $this->showCaption = $value;
+                    $this->caption = $value;
                     break;
             }
         }
@@ -35,8 +35,8 @@ class PhotoswipeConfig
     /**
      * @return bool
      */
-    public function isShowCaption(): bool
+    public function hasCaption(): bool
     {
-        return $this->showCaption;
+        return $this->caption;
     }
 }
