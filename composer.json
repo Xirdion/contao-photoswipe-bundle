@@ -1,13 +1,12 @@
 {
-  "name": "sowieso/contao-photoswipe-bundle",
+  "name": "xirdion/contao-photoswipe-bundle",
   "type": "contao-bundle",
   "description": "contao bundle to add the photoswipe lightbox to a contao project",
   "license":"AGPL-3.0-or-later",
   "authors": [
     {
-      "name": "SowieSo GmbH & Co.KG",
-      "email": "development@sowieso.team",
-      "homepage": "https://sowieso.team"
+      "name": "Thomas Dirscherl",
+      "homepage": "https://github.com/xirdion"
     }
   ],
   "require": {
